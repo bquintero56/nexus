@@ -29,6 +29,7 @@ void searchLogsAndUploadToNexus(String server, String paths, String files, Strin
                              "${nexusUrl}/${server}/${fileOne}"
                     '
                 """
+                Archivos subidos a Nexus:<br> ${nexusURL.split(',').collect { "<a href='${it.trim()}' target='_blank'>${it.trim()}</a>" }.join('<br>')}
 
                 command.echo "🚀 Subiendo ${fileOne} a Nexus..."
                 command.sh(script: uploadCmd)
