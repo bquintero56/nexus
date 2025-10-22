@@ -44,3 +44,12 @@ void searchLogsAndUploadToNexus(String server, String paths, String files, Strin
         commonStg.printOutput("El servidor ${server} no está conectado", "Y")
     }
 }
+
+
+if (uploadedUrls) {
+    def urlsString = uploadedUrls.collect { f ->
+        "Log del archivo <b>${f.file}</b>: <a href='${f.url}' target='_blank'>${f.url}</a>"
+    }.join('<br>')
+    sentEmail(emailList, urlsString, paths)
+    command.echo "📧 Correo enviado con ${uploadedUrls.size()} archivos subidos a Nexus."
+}
