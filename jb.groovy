@@ -47,3 +47,30 @@ def data = lines.collect { line ->
     return [app: app.trim(), aplicativo: aplicativo.trim()]
 }
 return data*.app.unique().sort()
+
+
+
+void stgCreateUser(def servidoresPorApp, String appSeleccionado, String aplicativoSeleccionado) {
+    command.stage("Subir servicio EMS") {
+        try {
+            servidoresPorApp.each { app ->
+                if (app.app.trim().equalsIgnoreCase(appSeleccionado.trim()) &&
+                    app.aplicativo.trim().equalsIgnoreCase(aplicativoSeleccionado.trim())) {
+
+                    command.echo "✅ Coincidencia encontrada para App=${app.app}, Aplicativo=${app.aplicativo}"
+
+                    command.node(app.hostname) {
+                        command.sh """
+                            sudo -u ${app.user} bash -c '
+                                echo "Coincidencia encontrada con ${app.app} / ${app.aplicativo}"
+                                echo "Termino"
+                            '
+                        """
+                    }
+                }
+            }
+        } catch (e) {
+            commonStgs.printOutput("${e}", "R")
+        }
+    }
+}
