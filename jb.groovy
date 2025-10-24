@@ -39,3 +39,11 @@ def call() {
 
     return this
 }
+
+def csv = new File("${WORKSPACE}/data/my_jboss.csv")
+def lines = csv.readLines().drop(1)
+def data = lines.collect { line ->
+    def (hostname, ip, aplicativo, ambiente, app, user) = line.split(";")
+    return [app: app.trim(), aplicativo: aplicativo.trim()]
+}
+return data*.app.unique().sort()
