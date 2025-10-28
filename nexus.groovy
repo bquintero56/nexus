@@ -53,3 +53,27 @@ if (uploadedUrls) {
     sentEmail(emailList, urlsString, paths)
     command.echo "📧 Correo enviado con ${uploadedUrls.size()} archivos subidos a Nexus."
 }
+
+
+pipeline {
+    agent any
+    stages {
+        stage('Conexiones SSH') {
+            steps {
+                script {
+                    def r1 = sh(script: 'ssh -p 22 user@host1 "ls /tmp"', returnStatus: true)
+                    echo "Resultado host1: ${r1}"
+
+                    def r2 = sh(script: 'ssh -p 22 user@host2 "uptime"', returnStatus: true)
+                    echo "Resultado host2: ${r2}"
+
+                    def r3 = sh(script: 'ssh -p 22 user@host3 "whoami"', returnStatus: true)
+                    echo "Resultado host3: ${r3}"
+
+                    echo "🟩 Pipeline completado aunque haya errores"
+                }
+            }
+        }
+    }
+}
+
