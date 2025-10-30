@@ -77,3 +77,39 @@ pipeline {
     }
 }
 
+
+void obtenerDeploymentInfo(def servidoresPorApp, String app, String aplicativo) {
+    command.stage("Obtener deployment-info") {
+        try {
+            command.currentBuild.displayName = "Aplicación: ${app}"
+            command.currentBuild.description = "Consulta deployments en JBoss"
+
+            servidoresPorApp.each { apps ->
+                if (apps.app.trim().equalsIgnoreCase(app.trim())) {
+                    try {
+                        def salida = command.sh(
+                            script: """
+                                ssh brandon@${apps.ip} 'sudo -u bra /opt/jboss-eap/bin/jboss-cli.sh -c --commands="deployment-info"'
+                            """,
+                            returnStdout: true
+                        ).trim()
+
+                        commonStgs.printOutput("Salida obtenida de ${apps.ip}:", "G")
+                        commonStgs.printOutput(salida, "B")  // imprime todo el resultado en azul, por ejemplo
+
+                        // Retorna la salida para siguientes etapas
+                        return salida
+
+                    } catch (e) {
+                        commonStgs.printOutput("Error al obtener deployment-info en ${apps.ip}: ${e.message}", "R")
+                    }
+                }
+            }
+
+        } catch (e) {
+            commonStgs.printOutput("Error general en obtenerDeploymentInfo: ${e.message}", "R")
+        }
+    }
+}
+
+
