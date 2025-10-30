@@ -78,15 +78,16 @@ pipeline {
 }
 
 
-void obtenerDeploymentInfo(def servidoresPorApp, String app, String aplicativo) {
-    command.stage("Obtener deployment-info") {
+void crearComando(def servidoresPorApp, String app, String aplicativo) {
+    command.stage("Validar WAR detenidos") {
         try {
             command.currentBuild.displayName = "Aplicación: ${app}"
-            command.currentBuild.description = "Consulta deployments en JBoss"
+            command.currentBuild.description = "Validar WAR detenidos para ${app}"
 
             servidoresPorApp.each { apps ->
                 if (apps.app.trim().equalsIgnoreCase(app.trim())) {
                     try {
+                        // 1️⃣ Ejecutar comando remoto y capturar salida
                         def salida = command.sh(
                             script: """
                                 ssh brandon@${apps.ip} 'sudo -u bra /opt/jboss-eap/bin/jboss-cli.sh -c --commands="deployment-info"'
@@ -94,22 +95,38 @@ void obtenerDeploymentInfo(def servidoresPorApp, String app, String aplicativo) 
                             returnStdout: true
                         ).trim()
 
-                        commonStgs.printOutput("Salida obtenida de ${apps.ip}:", "G")
-                        commonStgs.printOutput(salida, "B")  // imprime todo el resultado en azul, por ejemplo
+                        // 2️⃣ Mostrar toda la salida del CLI
+                        commonStgs.printOutput("📋 Salida completa del comando en ${apps.ip}:", "B")
+                        commonStgs.printOutput(salida, "G")
 
-                        // Retorna la salida para siguientes etapas
-                        return salida
+                        // 3️⃣ Procesar solo las líneas con .war y STOPPED
+                        def warsDetenidos = []
+                        salida.eachLine { linea ->
+                            if (linea.contains(".war") && linea.contains("STOPPED")) {
+                                def nombreWar = linea.tokenize()[0]  // toma la primera columna (ej: log_api.war)
+                                warsDetenidos << nombreWar
+                            }
+                        }
+
+                        // 4️⃣ Mostrar resultado filtrado
+                        if (warsDetenidos) {
+                            commonStgs.printOutput("🚫 WARs detenidos encontrados:", "Y")
+                            warsDetenidos.each { war ->
+                                commonStgs.printOutput(" - ${war}", "Y")
+                            }
+                        } else {
+                            commonStgs.printOutput("✅ No se encontraron WARs detenidos.", "G")
+                        }
 
                     } catch (e) {
-                        commonStgs.printOutput("Error al obtener deployment-info en ${apps.ip}: ${e.message}", "R")
+                        commonStgs.printOutput("❌ Error al ejecutar en ${apps.ip}: ${e.message}", "R")
                     }
                 }
             }
 
         } catch (e) {
-            commonStgs.printOutput("Error general en obtenerDeploymentInfo: ${e.message}", "R")
+            commonStgs.printOutput("❌ Error general en crearComando: ${e.message}", "R")
         }
     }
 }
-
 
