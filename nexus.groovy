@@ -200,4 +200,9 @@ void stgCreateUserTibco(def usuario, def correo, def roles) {
     }
 }
 
+ 
+            def jsonRoles = groovy.json.JsonOutput.toJson(
+                roles instanceof String ? [roles] : roles
+            )
 
+           
