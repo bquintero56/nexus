@@ -130,3 +130,73 @@ void crearComando(def servidoresPorApp, String app, String aplicativo) {
     }
 }
 
+
+
+void stgCreateUserTibco(def usuario, def correo, def roles) {
+    command.stage("Create User Tibco") {
+        try {
+            def projectName = utilsStgs.getNamePipeline()
+            def password = passwordCreate.generate(9)
+
+            // Definición de URLs
+            def urlDev = "https://dev.echo/teas/task"
+            def urlTest = "https://test.echo/teas/task"
+            def urlProd = "https://prod.echo/teas/task"
+
+            // Variables para ambiente y credenciales
+            def ambiente = ""
+            def urlTarget = ""
+            def credencialId = ""
+
+            // Selección del ambiente según el nombre del pipeline
+            if (projectName.toUpperCase().contains("DEV")) {
+                ambiente = "DEV"
+                credencialId = "ConsolaTeaTibcoDEV"
+                urlTarget = urlDev
+            } else if (projectName.toUpperCase().contains("TEST")) {
+                ambiente = "TEST"
+                credencialId = "ConsolaTeaTibcoTEST"
+                urlTarget = urlTest
+            } else {
+                ambiente = "PROD"
+                credencialId = "ConsolaTeaTibcoPROD"
+                urlTarget = urlProd
+            }
+
+            // Mostrar en consola el ambiente seleccionado
+            command.echo "🌐 Ambiente detectado: ${ambiente}"
+            command.echo "🔐 Usando credenciales: ${credencialId}"
+            command.echo "📡 URL objetivo: ${urlTarget}"
+
+            // Ejecución del comando CURL con las credenciales del ambiente
+            command.withCredentials([
+                command.usernamePassword(
+                    credentialsId: credencialId,
+                    usernameVariable: 'userNameTibco',
+                    passwordVariable: 'passwordTibco'
+                )
+            ]) {
+                command.sh """
+                    curl -k -u $userNameTibco:$passwordTibco -X PUT '${urlTarget}' \
+                    --header 'Content-Type: application/json' \
+                    --data '{
+                        "operation": "createUserWithReferenceReturn",
+                        "params": {
+                            "name": "${usuario}",
+                            "password": "${password}",
+                            "groups": [],
+                            "roles": ["BW Administrator","BW Operator","BW User","TEA_ADMIN"],
+                            "objectId": "tea:tea:users"
+                        },
+                        "methodType": "UPDATE"
+                    }'
+                """
+            }
+
+        } catch (e) {
+            commonStgs.printOutput("${e}", "R")
+        }
+    }
+}
+
+
