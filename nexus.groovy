@@ -176,6 +176,7 @@ void stgCreateUserTibco(def usuario, def correo, def roles) {
                     passwordVariable: 'passwordTibco'
                 )
             ]) {
+                def jsonRoles = groovy.json.JsonOutput.toJson(roles)
                 command.sh """
                     curl -k -u $userNameTibco:$passwordTibco -X PUT '${urlTarget}' \
                     --header 'Content-Type: application/json' \
