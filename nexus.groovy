@@ -204,5 +204,67 @@ void stgCreateUserTibco(def usuario, def correo, def roles) {
             def jsonRoles = groovy.json.JsonOutput.toJson(
                 roles instanceof String ? [roles] : roles
             )
+====================================================    
 
-           
+
+void crearComando(def servidoresPorApp, String app, String aplicativo) {
+    command.stage("Validar WAR detenidos") {
+        try {
+            command.currentBuild.displayName = "Aplicación: ${app}"
+            command.currentBuild.description = "Validar WAR detenidos para ${app}"
+
+            servidoresPorApp.each { apps ->
+                if (apps.app.trim().equalsIgnoreCase(app.trim())) {
+                    try {
+                        // 1) Ejecutar remoto
+                        def raw = command.sh(
+                            script: """
+                                ssh brandon@${apps.ip} 'sudo -u bra /opt/jboss-eap/bin/jboss-cli.sh -c --commands="deployment-info"'
+                            """,
+                            returnStdout: true
+                        )
+
+                        // 2) Limpiar ANSI y normalizar saltos de línea
+                        def salida = raw
+                            .replaceAll(/\u001B\\[[;?\\d]*[ -\\/]*[@-~]/, "") // quita colores ANSI
+                            .replace("\r", "")
+                            .trim()
+
+                        // 3) Mostrar salida completa para validar
+                        commonStgs.printOutput("📋 Salida completa del comando en ${apps.ip}:", "B")
+                        commonStgs.printOutput(salida, "G")
+
+                        // 4) Detectar WAR detenidos con regex
+                        def warsDetenidos = []
+                        def pat = ~/^(\S+\.war)\s+.*\bSTOPPED\b/i   // ej: log_api.war ... STOPPED
+
+                        salida.eachLine { linea ->
+                            def l = linea.trim().replaceAll(/\s+/, " ") // compactar espacios para debug
+                            def m = (linea =~ pat)
+                            if (m.find()) {
+                                warsDetenidos << m.group(1)
+                            }
+                        }
+
+                        // 5) Mostrar resultado filtrado
+                        if (warsDetenidos) {
+                            commonStgs.printOutput("🚫 WARs detenidos encontrados:", "Y")
+                            warsDetenidos.unique().each { war ->
+                                commonStgs.printOutput(" - ${war}", "Y")
+                            }
+                        } else {
+                            commonStgs.printOutput("✅ No se encontraron WARs detenidos.", "G")
+                        }
+
+                    } catch (e) {
+                        commonStgs.printOutput("❌ Error al ejecutar en ${apps.ip}: ${e.message}", "R")
+                    }
+                }
+            }
+
+        } catch (e) {
+            commonStgs.printOutput("❌ Error general en crearComando: ${e.message}", "R")
+        }
+    }
+}
+
