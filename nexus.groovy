@@ -216,39 +216,39 @@ void crearComando(def servidoresPorApp, String app, String aplicativo) {
             servidoresPorApp.each { apps ->
                 if (apps.app.trim().equalsIgnoreCase(app.trim())) {
                     try {
-                        // 1) Ejecutar remoto
-                        def raw = command.sh(
+                        // 1️⃣ Ejecutar comando remoto y capturar salida
+                        def rawSalida = command.sh(
                             script: """
                                 ssh brandon@${apps.ip} 'sudo -u bra /opt/jboss-eap/bin/jboss-cli.sh -c --commands="deployment-info"'
                             """,
                             returnStdout: true
                         )
 
-                        // 2) Limpiar ANSI y normalizar saltos de línea
-                        def salida = raw
-                            .replaceAll(/\u001B\\[[;?\\d]*[ -\\/]*[@-~]/, "") // quita colores ANSI
-                            .replace("\r", "")
+                        // 2️⃣ Limpiar caracteres invisibles (ANSI y saltos)
+                        def salida = rawSalida
+                            .replaceAll(/\u001B\\[[;?0-9]*[ -\\/]*[@-~]/, "") // elimina códigos ANSI (colores)
+                            .replaceAll("\\r", "")
                             .trim()
 
-                        // 3) Mostrar salida completa para validar
-                        commonStgs.printOutput("📋 Salida completa del comando en ${apps.ip}:", "B")
+                        // 3️⃣ Mostrar toda la salida limpia
+                        commonStgs.printOutput("📋 Salida limpia del comando en ${apps.ip}:", "B")
                         commonStgs.printOutput(salida, "G")
 
-                        // 4) Detectar WAR detenidos con regex
+                        // 4️⃣ Filtrar WARs detenidos
                         def warsDetenidos = []
-                        def pat = ~/^(\S+\.war)\s+.*\bSTOPPED\b/i   // ej: log_api.war ... STOPPED
+                        def pattern = ~/^(\S+\.war)\s+.*STOPPED$/   // busca líneas que terminen en STOPPED
 
                         salida.eachLine { linea ->
-                            def l = linea.trim().replaceAll(/\s+/, " ") // compactar espacios para debug
-                            def m = (linea =~ pat)
-                            if (m.find()) {
-                                warsDetenidos << m.group(1)
+                            def clean = linea.trim().replaceAll(/\s+/, " ")  // compacta espacios
+                            def matcher = clean =~ pattern
+                            if (matcher.find()) {
+                                warsDetenidos << matcher.group(1)
                             }
                         }
 
-                        // 5) Mostrar resultado filtrado
+                        // 5️⃣ Mostrar resultado filtrado
                         if (warsDetenidos) {
-                            commonStgs.printOutput("🚫 WARs detenidos encontrados:", "Y")
+                            commonStgs.printOutput("🚫 WARs detenidos encontrados en ${apps.ip}:", "Y")
                             warsDetenidos.unique().each { war ->
                                 commonStgs.printOutput(" - ${war}", "Y")
                             }
