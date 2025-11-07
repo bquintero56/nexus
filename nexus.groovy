@@ -207,58 +207,56 @@ void stgCreateUserTibco(def usuario, def correo, def roles) {
 ====================================================    
 
 
-void crearComando(def servidoresPorApp, String app, String aplicativo) {
+void crearComando(def servidoresPorApp) {
     command.stage("Validar WAR detenidos") {
         try {
-            command.currentBuild.displayName = "Aplicación: ${app}"
-            command.currentBuild.description = "Validar WAR detenidos para ${app}"
+            command.currentBuild.displayName = "Validar WAR detenidos"
+            command.currentBuild.description = "Verifica WARs detenidos en todos los servidores"
 
             servidoresPorApp.each { apps ->
-                if (apps.app.trim().equalsIgnoreCase(app.trim())) {
-                    try {
-                        // 1️⃣ Ejecutar comando remoto y capturar salida
-                        def rawSalida = command.sh(
-                            script: """
-                                ssh brandon@${apps.ip} 'sudo -u bra /opt/jboss-eap/bin/jboss-cli.sh -c --commands="deployment-info"'
-                            """,
-                            returnStdout: true
-                        )
+                try {
+                    def salida = command.sh(
+                        script: """
+                            ssh -o StrictHostKeyChecking=no brandon@${apps.ip} "echo 'P' | sudo -u ${apps.user} /opt/jboss-eap/bin/jboss-cli.sh -c --commands='deployment-info'"
+                        """,
+                        returnStdout: true
+                    ).trim()
 
-                        // 2️⃣ Limpiar caracteres invisibles (ANSI y saltos)
-                        def salida = rawSalida
-                            .replaceAll(/\u001B\\[[;?0-9]*[ -\\/]*[@-~]/, "") // elimina códigos ANSI (colores)
-                            .replaceAll("\\r", "")
-                            .trim()
+                    // 🔹 Limpieza básica: quita códigos ANSI, tabulaciones y normaliza espacios
+                    salida = salida
+                        .replaceAll(/\u001B\\[[;?0-9]*[ -\\/]*[@-~]/, "")
+                        .replaceAll("\\r", "")
+                        .replaceAll("\\t", " ")
+                        .replaceAll("\\s+", " ")
+                        .trim()
 
-                        // 3️⃣ Mostrar toda la salida limpia
-                        commonStgs.printOutput("📋 Salida limpia del comando en ${apps.ip}:", "B")
-                        commonStgs.printOutput(salida, "G")
+                    commonStgs.printOutput("📋 Salida completa del comando en ${apps.ip}:", "B")
+                    command.echo(salida)
 
-                        // 4️⃣ Filtrar WARs detenidos
-                        def warsDetenidos = []
-                        def pattern = ~/^(\S+\.war)\s+.*STOPPED$/   // busca líneas que terminen en STOPPED
+                    def warsDetenidos = []
 
-                        salida.eachLine { linea ->
-                            def clean = linea.trim().replaceAll(/\s+/, " ")  // compacta espacios
-                            def matcher = clean =~ pattern
-                            if (matcher.find()) {
-                                warsDetenidos << matcher.group(1)
-                            }
+                    // 🔹 Usamos regex que detecta ".war" y "STOPPED" en la misma línea
+                    def patron = ~/(\S+\.war).*STOPPED/i
+
+                    salida.eachLine { linea ->
+                        def clean = linea.trim()
+                        def match = (clean =~ patron)
+                        if (match.find()) {
+                            warsDetenidos << match.group(1)
                         }
-
-                        // 5️⃣ Mostrar resultado filtrado
-                        if (warsDetenidos) {
-                            commonStgs.printOutput("🚫 WARs detenidos encontrados en ${apps.ip}:", "Y")
-                            warsDetenidos.unique().each { war ->
-                                commonStgs.printOutput(" - ${war}", "Y")
-                            }
-                        } else {
-                            commonStgs.printOutput("✅ No se encontraron WARs detenidos.", "G")
-                        }
-
-                    } catch (e) {
-                        commonStgs.printOutput("❌ Error al ejecutar en ${apps.ip}: ${e.message}", "R")
                     }
+
+                    if (warsDetenidos) {
+                        command.echo("🚫 WARs detenidos encontrados en ${apps.ip}:")
+                        warsDetenidos.unique().each { war ->
+                            command.echo(" - ${war}")
+                        }
+                    } else {
+                        commonStgs.printOutput("✅ No se encontraron WARs detenidos en ${apps.ip}.", "G")
+                    }
+
+                } catch (e) {
+                    commonStgs.printOutput("❌ Error al ejecutar en ${apps.ip}: ${e.message}", "R")
                 }
             }
 
