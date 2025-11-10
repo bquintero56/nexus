@@ -103,4 +103,20 @@ ssh brandon@18.737.373 "sudo -u braditon bash -c 'sed -i \\'s/\\.war\\\">/\\.war
 
 
 
+sh '''
+# 1️⃣ Crear el script remoto con el comando sed
+ssh brandon@18.737.373 "cat > /tmp/actualizar_war.sh <<'EOF'
+#!/bin/bash
+# Deshabilitar los WAR en el standalone.xml
+sed -i 's/\\.war\">/\\.war\" enabled=\"false\">/g' /opt/jboss-eap/standalone/configuration/standalone.xml
+EOF"
+
+# 2️⃣ Darle permisos de ejecución
+ssh brandon@18.737.373 "chmod +x /tmp/actualizar_war.sh"
+
+# 3️⃣ Ejecutarlo como el usuario braditon
+ssh brandon@18.737.373 "sudo -u braditon bash /tmp/actualizar_war.sh"
+'''
+
+
 
