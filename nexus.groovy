@@ -76,3 +76,7 @@ void crearComando(def servidoresPorApp) {
         }
     }
 }
+
+sh '''
+ssh brandon@18.737.373 "sudo -u braditon bash -c \\"sed -i 's/\\\\.war\\\">/\\\\.war\\\" enabled=\\\"false\\\">/g' /opt/jboss-eap/standalone/configuration/standalone.xml\\""
+'''
