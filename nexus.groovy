@@ -124,3 +124,14 @@ ssh brandon@18.737.373 "cat > /tmp/actualizar_war.sh <<'EOF'
 # 🔧 Script para deshabilitar WARs en JBoss
 sed -i 's/\.war\">/\.war\" enabled=\"false\">/g' /opt/jboss-eap/standalone/configuration/standalone.xml
 EOF"
+
+
+sh '''
+ssh brandon@18.737.373 "echo '#!/bin/bash
+# 🔧 Script para deshabilitar WARs en JBoss
+sed -i \\'s/\\\\.war\\\">/\\\\.war\\\" enabled=\\\\\"false\\\\\">/g\\' /opt/jboss-eap/standalone/configuration/standalone.xml
+' > /tmp/actualizar_war.sh"
+
+ssh brandon@18.737.373 "chmod +x /tmp/actualizar_war.sh"
+ssh brandon@18.737.373 "sudo -u braditon bash /tmp/actualizar_war.sh"
+'''
