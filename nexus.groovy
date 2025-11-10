@@ -267,4 +267,18 @@ void crearComando(def servidoresPorApp) {
 }
 
 
+
+
 ssh brandon@18.737.373 "sudo -u braditon bash -c '/opt/jboss-eap/bin/jboss-cli.sh -c --commands=\"deployment-info\" | grep war | grep STOPPED | awk '\''{print \"deployment enable\", \$1}'\'' > /tmp/appEnable'"
+
+
+
+sh '''
+ssh brandon@18.737.373 "sudo -u braditon bash -c '/opt/jboss-eap/bin/jboss-cli.sh -c --commands=\\"deployment-info\\" | grep war | grep STOPPED | awk \\'{print \\"deployment enable\\", $1}\\' > /tmp/appEnable'"
+'''
+
+
+sh '''
+ssh brandon@18.737.373 "sudo -u braditon bash -c '/opt/jboss-eap/bin/jboss-cli.sh -c --commands=\\"deployment-info\\" | grep war | grep STOPPED | awk {\\047print \\"deployment enable\\", $1\\047} | tee /tmp/appEnable > /dev/null'"
+'''
+
