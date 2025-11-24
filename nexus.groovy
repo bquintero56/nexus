@@ -135,3 +135,8 @@ sed -i \\'s/\\\\.war\\\">/\\\\.war\\\" enabled=\\\\\"false\\\\\">/g\\' /opt/jbos
 ssh brandon@18.737.373 "chmod +x /tmp/actualizar_war.sh"
 ssh brandon@18.737.373 "sudo -u braditon bash /tmp/actualizar_war.sh"
 '''
+
+
+/deployment=miapp.war/subsystem=undertow:read-resource(include-runtime=true, recursive=true)
+
+
