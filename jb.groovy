@@ -1,3 +1,5 @@
+
+/host=master:read-children-resources(child-type=server, include-runtime=true)
 #!/usr/bin/env groovy
 import com.brandon.jenkins.cmn.*
 
