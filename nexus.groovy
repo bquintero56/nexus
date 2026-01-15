@@ -1,4 +1,27 @@
+import groovy.json.JsonSlurper
 
+def jsonTmp = new JsonSlurper().parseText(getHostsCommand)
+
+// Copia profunda a estructuras serializables
+def json = [:] + jsonTmp
+jsonTmp = null
+
+def hostConnectionsTmp = json.result['host-connection']
+def hostConnections = [:] + hostConnectionsTmp
+hostConnectionsTmp = null
+
+def hosts = []
+hostConnections.each { k, v ->
+    if (v.connected == true) {
+        hosts << k.toString()
+    }
+}
+
+// 🔥 eliminar referencias problemáticas
+json = null
+hostConnections = null
+
+commonStgs.printOutput("Los hosts son: ${hosts}", "G")
 
 void crearComando(def servidoresPorApp) {
     command.stage("Validar WAR detenidos (por columnas)") {
