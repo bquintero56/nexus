@@ -76,3 +76,44 @@ void stgCreateUser(def servidoresPorApp, String appSeleccionado, String aplicati
         }
     }
 }
+
+
+
+
+
+
+import groovy.json.JsonSlurper
+
+def hosts = []
+
+// --- PARSEO AISLADO ---
+def parsed = new JsonSlurper().parseText(getHostsCommand)
+
+// copiar SOLO lo necesario a estructuras serializables
+def hostConnectionsTmp = parsed
+        ?.result
+        ?.'core-service'
+        ?.'management'
+        ?.'host-connection'
+
+// romper referencias CPS
+parsed = null
+
+if (hostConnectionsTmp) {
+    hostConnectionsTmp.each { k, v ->
+        if (k.startsWith('master-')) {
+            hosts << k.toString()
+        }
+    }
+}
+
+// romper referencia final
+hostConnectionsTmp = null
+// --- FIN PARSEO ---
+
+commonStgs.printOutput("Los hosts son: ${hosts}", "G")
+
+command.sleep(120)
+
+
+
