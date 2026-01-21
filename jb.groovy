@@ -1,3 +1,55 @@
+
+
+
+// 1️⃣ prioridad: Config
+def configGroups = serverGroups.findAll {
+    it.toLowerCase().contains('config')
+}
+
+// 2️⃣ prioridad: LB (excluyendo los que ya están en config)
+def lbGroups = serverGroups.findAll {
+    it.toLowerCase().contains('lb') &&
+    !it.toLowerCase().contains('config')
+}
+
+// 3️⃣ resto
+def otherGroups = serverGroups.findAll {
+    !it.toLowerCase().contains('config') &&
+    !it.toLowerCase().contains('lb')
+}
+
+// 🔥 orden final
+def orderedServerGroups = configGroups + lbGroups + otherGroups
+
+commonStgs.printOutput(
+    "Orden de inicio server-groups: ${orderedServerGroups}",
+    "G"
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Normalizar nombres
 def serverGroups = (getServerGroups =~ serverGroupPattern)
         .collect { it[1] }
