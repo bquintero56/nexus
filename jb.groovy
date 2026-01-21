@@ -1,3 +1,38 @@
+// Normalizar nombres
+def serverGroups = (getServerGroups =~ serverGroupPattern)
+        .collect { it[1] }
+        .drop(3)
+
+// 🔑 separar por prioridad
+def configGroups = serverGroups.findAll {
+    it.toLowerCase().contains('config')
+}
+
+def otherGroups = serverGroups.findAll {
+    !it.toLowerCase().contains('config')
+}
+
+// 🔥 orden final
+def orderedServerGroups = configGroups + otherGroups
+
+commonStgs.printOutput(
+    "Orden de inicio server-groups: ${orderedServerGroups}",
+    "G"
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /host=master:read-children-resources(child-type=server, include-runtime=true)
 #!/usr/bin/env groovy
@@ -116,4 +151,14 @@ commonStgs.printOutput("Los hosts son: ${hosts}", "G")
 command.sleep(120)
 
 
+
+
+{
+
+"outcome" => "failed",
+"result" => undefined,
+"failure-description" => "WFLYCTL0031: No operation named 'start' exists at address [(\"host\" => \"sla-c01-B0\")]",
+"rolled-back" => true
+}
+[
 
