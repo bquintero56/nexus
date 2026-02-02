@@ -1,0 +1,35 @@
+<service>
+  <id>JenkinsAgent-WindowsTest</id>
+  <name>Jenkins Agent (WindowsTest)</name>
+  <description>Jenkins inbound agent Windows (WebSocket estabilizado)</description>
+
+  <executable>D:\JenkinsTestWindows\jdk-21.0.8\bin\java.exe</executable>
+
+  <arguments>
+    -Xms256m
+    -Xmx768m
+    -XX:MaxMetaspaceSize=256m
+    -XX:+UseG1GC
+    -Djava.awt.headless=true
+    -Dfile.encoding=UTF-8
+    -Dorg.jenkinsci.remoting.engine.PingThread.pingIntervalSeconds=60
+    -Dorg.jenkinsci.remoting.engine.PingThread.timeoutSeconds=300
+    -jar D:\JenkinsTestWindows\Jenkins\agent.jar
+    -url https://ding.echonet
+    -secret c79e82122f0d7a18cd
+    -name WindowsALMTest
+    -webSocket
+    -workDir D:\JenkinsTestWindows\workspace
+  </arguments>
+
+  <log mode="roll-by-size">
+    <sizeThreshold>10MB</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+
+  <startmode>Automatic</startmode>
+
+  <!-- Reinicio con backoff -->
+  <onfailure action="restart" delay="60 sec"/>
+
+</service>
