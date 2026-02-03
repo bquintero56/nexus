@@ -1,3 +1,100 @@
+pipeline {
+    agent { label 'WindowsALMTest' }
+
+    options {
+        timestamps()
+    }
+
+    stages {
+
+        stage('Info JVM') {
+            steps {
+                bat '''
+                echo ==== JAVA VERSION ====
+                java -version
+
+                echo ==== JAVA PROPERTIES ====
+                java -XshowSettings:vm -version 2>&1 | findstr /R /C:"Max. Heap" /C:"Metaspace"
+                '''
+            }
+        }
+
+        stage('Stress CPU') {
+            steps {
+                bat '''
+                echo ==== CPU STRESS ====
+                for /L %%i in (1,1,4) do start /B cmd /C "for /L %%x in (1,1,500000000) do echo %%x > nul"
+                timeout /T 60
+                '''
+            }
+        }
+
+        stage('Stress Memory (Java)') {
+            steps {
+                bat '''
+                echo ==== JAVA MEMORY STRESS ====
+                java -Xms32m -Xmx128m -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -version
+                timeout /T 30
+                '''
+            }
+        }
+
+        stage('Workspace IO') {
+            steps {
+                bat '''
+                echo ==== IO STRESS ====
+                for /L %%i in (1,1,20) do (
+                  echo Archivo %%i > test_%%i.txt
+                )
+                dir
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            bat 'echo ==== TEST FINALIZADO ===='
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <service>
   <id>JenkinsAgent-WindowsTest</id>
   <name>Jenkins Agent (WindowsTest)</name>
