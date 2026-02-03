@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'WindowsALMTest' }
+    agent { label 'Windows' }
 
     options {
         timestamps()
