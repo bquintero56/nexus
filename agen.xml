@@ -129,4 +129,61 @@ pipeline {
   <!-- Reinicio con backoff -->
   <onfailure action="restart" delay="60 sec"/>
 
-</service>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Crear carpetas en Jenkins') {
+            steps {
+                jobDsl scriptText: """
+                    // Carpeta principal
+                    folder('Proyectos') {
+                        description('Carpeta principal de proyectos')
+                    }
+
+                    // Subcarpetas
+                    folder('Proyectos/Backend') {
+                        description('Proyectos Backend')
+                    }
+
+                    folder('Proyectos/Frontend') {
+                        description('Proyectos Frontend')
+                    }
+
+                    folder('Proyectos/DevOps') {
+                        description('Proyectos DevOps')
+                    }
+                """,
+                removedJobAction: 'IGNORE',
+                removedViewAction: 'IGNORE'
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
