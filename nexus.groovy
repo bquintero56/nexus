@@ -1,3 +1,110 @@
+stage('Subir Archivo JSON a Nexus') {
+    steps {
+        script {
+
+            def jsonContent = []
+
+            servers.each { server ->
+
+                def srvRes = serviceResults.find { 
+                    it.server_name == server.server_name && it.service == server.service 
+                }
+
+                def urlRes = urlResults.find { 
+                    it.server_name == server.server_name && it.url == server.url 
+                }
+
+                jsonContent << [
+                    server_name: server.server_name,
+                    servicio: srvRes?.service,
+                    resultadoServicio: srvRes?.success,
+                    url: urlRes?.url,
+                    resultadoUrl: urlRes?.success
+                ]
+            }
+
+            def jsonFile = "estado_servidores.json"
+
+            // ✅ AQUÍ ESTÁ LA CLAVE
+            def json = groovy.json.JsonOutput.toJson(jsonContent)
+
+            writeFile file: jsonFile, text: json
+
+            echo "Archivo creado: ${jsonFile}"
+            echo groovy.json.JsonOutput.prettyPrint(json)
+
+            def token = "ot:Ortd"
+            def urlNexus = "https://.../estado_servidores.json"
+
+            wrap([$class: 'MaskPasswordsBuildWrapper',
+                varPasswordPairs: [[password: token]]
+            ]) {
+                sh """
+                curl -s --insecure -v -u ${token} \
+                --upload-file ${jsonFile} ${urlNexus}
+                """
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import groovy.json.JsonSlurper
 
 def jsonTmp = new JsonSlurper().parseText(getHostsCommand)
