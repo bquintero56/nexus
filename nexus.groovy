@@ -1,3 +1,19 @@
+
+$[?(
+  @.server_name=="Myserver" &&
+  @.ip=="10.10.10.1" &&
+  @.servicio=="h.service" &&
+  @.resultadoServicio==true &&
+  @.url==null &&
+  @.resultadoUrl==true
+)]
+
+
+
+
+
+
+
 stage('Subir Archivo JSON a Nexus') {
     steps {
         script {
