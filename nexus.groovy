@@ -7,6 +7,92 @@ stage('Subir Archivo JSON a Nexus') {
             servers.each { server ->
 
                 def srvRes = serviceResults.find { 
+                    it.server_name == server.server_name &&
+                    it.service == server.service &&
+                    it.ip == server.ip   // 🔥 IMPORTANTE: incluir IP
+                }
+
+                def urlRes = urlResults.find { 
+                    it.server_name == server.server_name &&
+                    it.url == server.url &&
+                    it.ip == server.ip   // 🔥 IMPORTANTE
+                }
+
+                jsonContent << [
+                    server_name: server.server_name,
+                    ip: server.ip,                       // ✅ AGREGADO
+                    servicio: srvRes?.service,
+                    resultadoServicio: srvRes?.success,
+                    url: urlRes?.url,
+                    resultadoUrl: urlRes?.success
+                ]
+            }
+
+            def jsonFile = "estado_servidores.json"
+
+            // ✅ JSON limpio, sin problemas de sandbox ni serialización
+            def json = new groovy.json.JsonBuilder(jsonContent).toPrettyString()
+
+            writeFile file: jsonFile, text: json
+
+            echo "Archivo creado: ${jsonFile}"
+            echo json
+
+            def token = "ot:Ortd"
+            def urlNexus = "https://.../estado_servidores.json"
+
+            wrap([$class: 'MaskPasswordsBuildWrapper',
+                varPasswordPairs: [[password: token]]
+            ]) {
+                sh """
+                curl -s --insecure -v -u ${token} \
+                --upload-file ${jsonFile} ${urlNexus}
+                """
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+stage('Subir Archivo JSON a Nexus') {
+    steps {
+        script {
+
+            def jsonContent = []
+
+            servers.each { server ->
+
+                def srvRes = serviceResults.find { 
                     it.server_name == server.server_name && it.service == server.service 
                 }
 
