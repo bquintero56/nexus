@@ -1,4 +1,11 @@
 
+
+\"server_name\"\s*:\s*\"S11\".*\"ip\"\s*:\s*\"10\.100\.34\.34\".*\"servicio\"\s*:\s*\"httpd\.service\".*\"resultadoServicio\"\s*:\s*true
+
+
+
+
+
 $[?(
   @.server_name=="Myserver" &&
   @.ip=="10.10.10.1" &&
