@@ -1,5 +1,19 @@
 
 
+
+withCredentials([usernamePassword(
+    credentialsId: 'nexus-credenciales', 
+    usernameVariable: 'USER', 
+    passwordVariable: 'PASS'
+)]) {
+
+    sh """
+    curl -s --insecure -v -u ${USER}:${PASS} \
+    --upload-file ${jsonFile} ${urlNexus}
+    """
+}
+
+
 \"server_name\"\s*:\s*\"S11\".*\"ip\"\s*:\s*\"10\.100\.34\.34\".*\"servicio\"\s*:\s*\"httpd\.service\".*\"resultadoServicio\"\s*:\s*true
 
 
