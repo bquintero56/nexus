@@ -185,5 +185,232 @@ pipeline {
 
 
 
+pipeline {
+    agent { label 'SCI05' }
+
+    parameters {
+        text(
+            name: 'texto',
+            defaultValue: '',
+            description: 'JSON con información para crear monitoreo Dynatrace'
+        )
+    }
+
+    stages {
+
+        stage('Validar Input') {
+            steps {
+                script {
+
+                    println "=============================="
+                    println "PARAMETRO RECIBIDO"
+                    println "=============================="
+                    println params.texto
+
+                    if (!params.texto?.trim()) {
+                        error("El parámetro texto está vacío")
+                    }
+                }
+            }
+        }
+
+        stage('Procesar JSON') {
+            steps {
+                script {
+
+                    def jsonData
+
+                    try {
+
+                        jsonData = new groovy.json.JsonSlurper().parseText(params.texto)
+
+                        println "JSON parseado correctamente"
+
+                    } catch(Exception e) {
+
+                        println "ERROR parseando JSON"
+                        println e.getMessage()
+
+                        error("JSON inválido")
+                    }
+
+                    if (jsonData instanceof List) {
+
+                        println "Se detectó LISTA"
+
+                        jsonData.eachWithIndex { item, index ->
+
+                            println "Procesando item ${index}"
+
+                            procesarItem(item)
+                        }
+
+                    } else {
+
+                        println "Se detectó OBJETO"
+
+                        procesarItem(jsonData)
+                    }
+                }
+            }
+        }
+    }
+}
+
+def procesarItem(item) {
+
+    println "=============================="
+    println "INICIO PROCESAR ITEM"
+    println "=============================="
+
+    def serverName = item.server_name ?: ""
+    def ip = item.ip ?: ""
+    def servicio = item.servicio ?: ""
+    def resultadoServicio = item.resultadoServicio ?: false
+    def url = item.url ?: ""
+    def resultadoUrl = item.resultadoUrl ?: false
+
+    println "serverName: ${serverName}"
+    println "ip: ${ip}"
+    println "servicio: ${servicio}"
+    println "resultadoServicio: ${resultadoServicio}"
+    println "url: ${url}"
+    println "resultadoUrl: ${resultadoUrl}"
+
+    def nombreMonitoreo = ""
+    def valorBusqueda = ""
+
+    if (serverName && serverName != 'localhost') {
+
+        nombreMonitoreo = "35020--DYNATLAM--STG--JENKINS--SESAME--${serverName}--${ip}"
+
+        valorBusqueda = "\"server_name\":\"${serverName}\",\"ip\":\"${ip}\""
+
+    } else {
+
+        nombreMonitoreo = "35020--DYNATLAM--STG--JENKINS--SESAME--localhost--${url}"
+
+        valorBusqueda = "\"url\":\"${url}\",\"resultadoUrl\":true"
+    }
+
+    println "nombreMonitoreo: ${nombreMonitoreo}"
+    println "valorBusqueda: ${valorBusqueda}"
+
+    def bodyMap = [
+
+        anomalyDetection: [
+            loadingTimeThresholds: [
+                enabled: true,
+                thresholds: [[
+                    requestIndex: 1,
+                    type: "TOTAL",
+                    valueMs: 100
+                ]]
+            ],
+            outageHandling: [
+                globalOutage: true,
+                localOutage: true,
+                localOutagePolicy: [
+                    affectedLocations: 1,
+                    consecutiveRuns: 3
+                ]
+            ]
+        ],
+
+        enabled: true,
+        frequencyMin: 5,
+
+        locations: [
+            "SYNTHETIC_LOCATION-4E98E4"
+        ],
+
+        name: nombreMonitoreo,
+
+        script: [
+            configuration: [
+                device: [
+                    deviceName: "Desktop",
+                    orientation: "landscape"
+                ]
+            ],
+
+            events: [[
+                description: "Loading page",
+                type: "navigate",
+                url: url,
+                wait: [
+                    waitFor: "page_complete"
+                ]
+            ]],
+
+            type: "availability",
+            version: "1.0",
+
+            requests: [[
+                description: "estado_servidores",
+                url: "https://net/nexus/repository/Dynatrace/estado_servidores.json",
+                method: "GET",
+
+                validation: [
+                    rules: [
+                        [
+                            type: "regexConstraint",
+                            value: valorBusqueda,
+                            passIfFound: true
+                        ],
+                        [
+                            type: "httpStatusesList",
+                            value: ">=400",
+                            passIfFound: false
+                        ]
+                    ]
+                ],
+
+                configuration: [
+                    acceptAnyCertificate: true,
+                    followRedirects: true,
+                    shouldNotPersistSensitiveData: false
+                ]
+            ]]
+        ],
+
+        tags: [
+            "BAM--ID:35020"
+        ],
+
+        type: "HTTP"
+    ]
+
+    def jsonBody = groovy.json.JsonOutput.prettyPrint(
+        groovy.json.JsonOutput.toJson(bodyMap)
+    )
+
+    println "=============================="
+    println "BODY JSON GENERADO"
+    println "=============================="
+    println jsonBody
+
+    writeFile file: "body.json", text: jsonBody
+
+    println "Archivo body.json creado"
+
+    sh """
+        echo "=============================="
+        echo "ENVIANDO A DYNATRACE"
+        echo "=============================="
+
+        curl --location --insecure \
+        --request POST 'https://TU-DYNATRACE/api/v1/synthetic/monitors' \
+        --header 'Authorization: Api-Token TU_TOKEN' \
+        --header 'Content-Type: application/json' \
+        --data @body.json \
+        --verbose
+    """
+
+    println "Monitor enviado"
+}
+
+
+
 
 
