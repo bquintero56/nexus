@@ -214,3 +214,87 @@ command.sleep(120)
 }
 [
 
+
+
+pipeline {
+    agent { label 'linux' }
+
+    stages {
+        stage('Prueba de conexión') {
+            steps {
+                script {
+
+                    def nodos = [
+                        "linux",
+                        "linux",
+                        "linux"
+                    ]
+
+                    def exitos = []
+                    def fallidos = []
+
+                    nodos.each { nodoIt ->
+
+                        node(nodoIt) {
+
+                            def servidores = params."Lista Servidores"
+                            def listaServidores = servidores.split("\n")
+
+                            listaServidores.each { servidor ->
+
+                                def datos = servidor.trim().split("\\s+")
+                                def host = datos[0]
+
+                                try {
+
+                                    sh """
+                                        nc -zv -w 1 ${host} 22
+                                    """
+
+                                    exitos << [
+                                        nodo: nodoIt,
+                                        servidor: host
+                                    ]
+
+                                } catch (e) {
+
+                                    fallidos << [
+                                        nodo: nodoIt,
+                                        servidor: host
+                                    ]
+                                }
+                            }
+                        }
+                    }
+
+                    echo "=============================="
+                    echo "SERVIDORES CON CONEXIÓN EXITOSA"
+                    echo "=============================="
+
+                    exitos.each {
+                        echo "Nodo: ${it.nodo} -> Servidor: ${it.servidor}"
+                    }
+
+                    echo "=============================="
+                    echo "SERVIDORES SIN CONEXIÓN"
+                    echo "=============================="
+
+                    fallidos.each {
+                        echo "Nodo: ${it.nodo} -> Servidor: ${it.servidor}"
+                    }
+
+                    echo "=============================="
+                    echo "RESUMEN"
+                    echo "=============================="
+                    echo "Exitosos: ${exitos.size()}"
+                    echo "Fallidos: ${fallidos.size()}"
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
